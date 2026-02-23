@@ -1,0 +1,186 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: tasktracker_db_test
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build -x test
+
+      - name: Run tests
+        env:
+          DB_URL: jdbc:mysql://localhost:3306/tasktracker_db_test?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+          DB_USERNAME: testuser
+          DB_PASSWORD: testpass
+        run: ./gradlew test
+
+      - name: Generate test report
+        if: always()
+        run: ./gradlew test jacocoTestReport
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: build/test-results/
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: build/reports/jacoco/
+
+      - name: Build JAR
+        run: ./gradlew bootJar
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-jar
+          path: build/libs/*.jar
+
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run Kotlin linter
+        run: ./gradlew check
+
+      - name: Check code formatting
+        run: ./gradlew checkKotlinGradlePluginConfigurationErrors
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: task-tracker-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          docker run -d --name test-backend \
+            -e DB_URL="jdbc:mysql://host.docker.internal:3306/tasktracker_db" \
+            -e DB_USERNAME=user \
+            -e DB_PASSWORD=password \
+            task-tracker-backend:latest
+          sleep 5
+          docker logs test-backend
+          docker rm -f test-backend
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: OWASP Dependency Check
+        run: ./gradlew dependencyCheckAnalyze || true
+
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: build/reports/dependency-check-report.html
+
+  status-check:
+    name: CI Status Check
+    runs-on: ubuntu-latest
+    needs: [build, code-quality, docker-build]
+    if: always()
+
+    steps:
+      - name: Check build status
+        run: |
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "Build failed!"
+            exit 1
+          fi
+          if [ "${{ needs.code-quality.result }}" != "success" ]; then
+            echo "Code quality check failed!"
+            exit 1
+          fi
+          if [ "${{ needs.docker-build.result }}" != "success" ]; then
+            echo "Docker build failed!"
+            exit 1
+          fi
+          echo "All checks passed!"

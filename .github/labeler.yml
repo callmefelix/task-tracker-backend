@@ -1,0 +1,47 @@
+# Configuration for PR labeler
+# Automatically labels PRs based on changed files
+
+documentation:
+  - '**/*.md'
+  - 'docs/**/*'
+
+dependencies:
+  - 'build.gradle.kts'
+  - 'gradle/**/*'
+
+configuration:
+  - '**/application*.properties'
+  - '**/application*.yml'
+  - '**/*.env*'
+
+docker:
+  - 'Dockerfile'
+  - 'docker-compose.yml'
+  - '.dockerignore'
+
+ci-cd:
+  - '.github/**/*'
+
+api:
+  - 'src/**/controller/**/*'
+  - 'src/**/dto/**/*'
+
+database:
+  - 'src/**/repository/**/*'
+  - 'src/**/domain/**/*'
+  - '**/migration/**/*'
+
+security:
+  - 'src/**/config/SecurityConfig.kt'
+  - 'src/**/config/*Security*'
+
+tests:
+  - 'src/test/**/*'
+  - '**/*Test.kt'
+  - '**/*Tests.kt'
+
+bugfix:
+  - head-branch: ['^fix', 'fix\\/']
+
+feature:
+  - head-branch: ['^feat', 'feature\\/']
