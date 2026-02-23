@@ -44,19 +44,27 @@ jobs:
       - name: Extract version
         id: version
         run: |
-          VERSION=$(./gradlew properties -q | grep "version:" | awk '{print $2}')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Application version: $VERSION"
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # For tags, extract version from tag name
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            # For regular commits, use gradle version or default
+            VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}' | tr -d '\r\n' | xargs || echo "dev-${GITHUB_SHA::7}")
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Application version: ${VERSION}"
 
       - name: Create release artifact
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           mkdir -p release
           cp build/libs/*.jar release/
           cp docker-compose.yml release/
-          cp -r .env.example release/
+          cp .env.example release/
           tar -czf release-${{ steps.version.outputs.version }}.tar.gz release/
 
       - name: Upload release artifact
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
         with:
           name: release-artifact
