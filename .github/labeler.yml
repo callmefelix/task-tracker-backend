@@ -1,44 +1,53 @@
-# Configuration for PR labeler
+# Configuration for PR labeler (v5+ format)
 # Automatically labels PRs based on changed files
 
 documentation:
-  - '**/*.md'
-  - 'docs/**/*'
+  - changed-files:
+    - any-glob-to-any-file: '**/*.md'
+    - any-glob-to-any-file: 'docs/**/*'
 
 dependencies:
-  - 'build.gradle.kts'
-  - 'gradle/**/*'
+  - changed-files:
+    - any-glob-to-any-file: 'build.gradle.kts'
+    - any-glob-to-any-file: 'gradle/**/*'
 
 configuration:
-  - '**/application*.properties'
-  - '**/application*.yml'
-  - '**/*.env*'
+  - changed-files:
+    - any-glob-to-any-file: '**/application*.properties'
+    - any-glob-to-any-file: '**/application*.yml'
+    - any-glob-to-any-file: '**/*.env*'
 
 docker:
-  - 'Dockerfile'
-  - 'docker-compose.yml'
-  - '.dockerignore'
+  - changed-files:
+    - any-glob-to-any-file: 'Dockerfile'
+    - any-glob-to-any-file: 'docker-compose.yml'
+    - any-glob-to-any-file: '.dockerignore'
 
 ci-cd:
-  - '.github/**/*'
+  - changed-files:
+    - any-glob-to-any-file: '.github/**/*'
 
 api:
-  - 'src/**/controller/**/*'
-  - 'src/**/dto/**/*'
+  - changed-files:
+    - any-glob-to-any-file: 'src/**/controller/**/*'
+    - any-glob-to-any-file: 'src/**/dto/**/*'
 
 database:
-  - 'src/**/repository/**/*'
-  - 'src/**/domain/**/*'
-  - '**/migration/**/*'
+  - changed-files:
+    - any-glob-to-any-file: 'src/**/repository/**/*'
+    - any-glob-to-any-file: 'src/**/domain/**/*'
+    - any-glob-to-any-file: '**/migration/**/*'
 
 security:
-  - 'src/**/config/SecurityConfig.kt'
-  - 'src/**/config/*Security*'
+  - changed-files:
+    - any-glob-to-any-file: 'src/**/config/SecurityConfig.kt'
+    - any-glob-to-any-file: 'src/**/config/*Security*'
 
 tests:
-  - 'src/test/**/*'
-  - '**/*Test.kt'
-  - '**/*Tests.kt'
+  - changed-files:
+    - any-glob-to-any-file: 'src/test/**/*'
+    - any-glob-to-any-file: '**/*Test.kt'
+    - any-glob-to-any-file: '**/*Tests.kt'
 
 bugfix:
   - head-branch: ['^fix', 'fix\\/']
