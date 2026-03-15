@@ -53,7 +53,7 @@ services:
       context: ../task-tracker-frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: http://localhost:8080/api
+        VITE_API_BASE_URL: http://89.167.111.171:8080/api
     container_name: tasktracker-frontend
     restart: unless-stopped
     ports:
