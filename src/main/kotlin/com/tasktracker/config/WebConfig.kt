@@ -12,7 +12,11 @@ class WebConfig : WebMvcConfigurer {
             .allowedOrigins( "http://localhost",
                 "http://localhost:80",
                 "http://localhost:5173",
-                "http://89.167.111.171") // Allow your Vite frontend's origin
+                "http://89.167.111.171",
+                "https://mytasklist.org",
+                "https://www.mytasklist.org",
+                "http://mytasklist.org",
+                "http://www.mytasklist.org") // Allow your Vite frontend's origin
             .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Allow necessary HTTP methods
             .allowedHeaders("*") // Allow all headers
             .allowCredentials(true) // Important for cookies/authentication headers
